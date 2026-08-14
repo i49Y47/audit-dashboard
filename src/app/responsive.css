@@ -1,0 +1,61 @@
+/* Responsive Layout Classes */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+}
+.header-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.user-info {
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255,255,255,0.3);
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .top-header {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+    align-items: flex-start;
+  }
+  .header-actions form, .header-actions button, .header-actions a {
+    width: 100%;
+    justify-content: center;
+  }
+  .user-info {
+    border-left: none !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .container {
+    padding: 12px;
+  }
+}

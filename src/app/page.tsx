@@ -269,7 +269,7 @@ export default function Dashboard() {
           )}
         </div>
         
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div className="header-actions">
           <form onSubmit={searchAccounts} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <input 
               type="text" 
@@ -294,7 +294,7 @@ export default function Dashboard() {
             <Upload size={18} /> {uploading ? 'Importing...' : 'Import Excel'}
           </button>
           
-          <div style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '12px', paddingLeft: '12px', borderLeft: '1px solid rgba(255,255,255,0.3)' }}>
+          <div className="user-info">
             <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user.username}</span>
             <button onClick={handleLogout} className="btn-outline" style={{ padding: '6px', backgroundColor: 'transparent', border: 'none', color: 'white' }}>
               <LogOut size={18} />
@@ -317,7 +317,7 @@ export default function Dashboard() {
           <div className="animate-fade-in">
             <h1 style={{ color: 'var(--bob-blue-dark)', marginBottom: '24px' }}>Branch Overview</h1>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+            <div className="grid-auto" style={{ marginBottom: '32px' }}>
               <div className="glass-panel" style={{ padding: '24px' }}>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Total Portfolio Size</div>
                 <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--bob-blue)' }}>{formatCurrency(overview.total_sanctioned)}</div>
@@ -329,7 +329,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+            <div className="grid-2" style={{ marginBottom: '32px' }}>
               <div className="glass-panel" style={{ padding: '24px', height: '350px' }}>
                 <h3 style={{ marginTop: 0 }}>Risk Distribution</h3>
                 <ResponsiveContainer width="100%" height="100%">
@@ -367,11 +367,11 @@ export default function Dashboard() {
         {/* Search Results */}
         {!selectedAccount && accounts.length > 0 && (
           <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <h2 style={{ color: 'var(--bob-blue-dark)', margin: 0 }}>Search Results ({accounts.length})</h2>
               <button className="btn-outline" onClick={() => { setAccounts([]); fetchOverview(activeDatasetId); }}>Clear Search</button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '16px' }}>
+            <div className="grid-auto">
               {accounts.map((acc, i) => (
                 <div 
                   key={i} 
@@ -399,14 +399,14 @@ export default function Dashboard() {
             </button>
             
             <div className="glass-panel" style={{ padding: '32px', marginBottom: '32px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+              <div className="grid-3">
                 
                 {/* Account Metadata */}
                 <div>
                   <h1 style={{ margin: '0 0 8px 0', color: 'var(--bob-blue-dark)' }}>{selectedAccount['Account Name']}</h1>
                   <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)', fontSize: '1.1rem' }}>Account No: <strong>{selectedAccount['Account No']}</strong></p>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <div className="grid-2">
                     <div>
                       <div className="meta-label">Product</div>
                       <div className="meta-value">{selectedAccount['Account Product'] || '-'}</div>
@@ -450,7 +450,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <h2 style={{ color: 'var(--text-main)', margin: 0 }}>Audit Findings ({findings.length})</h2>
               {Object.keys(edits).length > 0 && (
                 <button className="btn-primary" onClick={saveAllChanges} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

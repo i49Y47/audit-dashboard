@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
 
 export async function GET(
   req: NextRequest,
@@ -13,6 +14,8 @@ export async function GET(
     if (!datasetId) {
       return NextResponse.json({ error: 'datasetId is required' }, { status: 400 });
     }
+    
+    const session = await getSession();
     
     const account = await prisma.account.findUnique({
       where: { 
@@ -62,14 +65,16 @@ export async function GET(
       'Auditor Comment': f.auditorComment,
       'Auditor Name': f.auditorName,
       'Comment Date': f.commentDate,
-      // Pass the comments list directly
-      comments: f.comments.map(c => ({
-        id: c.id,
-        text: c.text,
-        type: c.type,
-        username: c.author.username,
-        createdAt: c.createdAt
-      }))
+      comments: f.comments
+        .filter(c => c.type !== 'PRIVATE' || c.authorId === session?.userId)
+        .map(c => ({
+          id: c.id,
+          text: c.text,
+          type: c.type,
+          authorId: c.authorId,
+          username: c.author.username,
+          createdAt: c.createdAt
+        }))
     }));
 
     return NextResponse.json({
