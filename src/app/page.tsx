@@ -152,7 +152,7 @@ export default function Dashboard() {
     setLoading(false);
   };
 
-  const handleEditChange = (slNo: string, field: string, value: string) => {
+  const handleEditChange = (slNo: string, field: string, value: string | boolean) => {
     setEdits((prev: any) => ({
       ...prev,
       [slNo]: {
@@ -441,7 +441,7 @@ export default function Dashboard() {
                             <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--bob-blue)' : 'var(--bob-orange)'} />
                           ))
                         }
-                        <LabelList dataKey="value" position="top" formatter={(value: number) => formatCurrency(value)} style={{ fontSize: '0.8rem', fill: 'var(--text-main)' }} />
+                        <LabelList dataKey="value" position="top" formatter={(value: any) => value ? formatCurrency(Number(value)) : ''} style={{ fontSize: '0.8rem', fill: 'var(--text-main)' }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
