@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  username String    @unique
+  password String
+  comments Comment[]
+}
+
+model Dataset {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  createdAt DateTime  @default(now())
+  accounts  Account[]
+}
+
+model Account {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  accountNo           String
+  datasetId           String   @db.ObjectId
+  
+  accountName         String
+  customerId          String?
+  accountProduct      String?
+  sanctionedDate      String?
+  sanctionedLimit     Float?
+  outstandingBalance  Float?
+  interestRate        Float?
+  
+  dataset             Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  findings            Finding[]
+
+  @@unique([datasetId, accountNo])
+}
+
+model Finding {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  slNo               String   
+  accountId          String   @db.ObjectId
+  
+  categoryName       String?
+  subcategoryName    String?
+  observation        String?
+  risk               String?
+  status             String?
+  auditorComment     String?
+  auditorName        String?
+  commentDate        String?
+  
+  account            Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  comments           Comment[]
+
+  @@unique([accountId, slNo])
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  text      String
+  type      String   // 'SHARED' or 'PRIVATE'
+  authorId  String   @db.ObjectId
+  findingId String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  author    User     @relation(fields: [authorId], references: [id])
+  finding   Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+}
