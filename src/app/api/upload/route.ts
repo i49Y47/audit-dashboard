@@ -22,9 +22,10 @@ export async function POST(req: NextRequest) {
     const findingsData = xlsx.utils.sheet_to_json(wb.Sheets['Findings']);
 
     // 1. Create a new Dataset for this upload
+    const istTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     const dataset = await prisma.dataset.create({
       data: {
-        name: `Imported on ${new Date().toLocaleString()}`
+        name: `Imported on ${istTime}`
       }
     });
 

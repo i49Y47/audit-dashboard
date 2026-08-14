@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Search, Save, AlertTriangle, ArrowLeft, Upload, LogOut } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from 'recharts';
+import { Search, Save, AlertTriangle, ArrowLeft, Upload, LogOut, Trash2, Download } from 'lucide-react';
 
 const API_BASE = '/api';
 
 export default function Dashboard() {
   const router = useRouter();
   
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [user, setUser] = useState<{ id: string, username: string } | null>(null);
   const [datasets, setDatasets] = useState<any[]>([]);
   const [activeDatasetId, setActiveDatasetId] = useState<string>('');
   
@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   
   const [edits, setEdits] = useState<any>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -167,10 +168,15 @@ export default function Dashboard() {
     
     try {
       const promises = Object.keys(edits).map(slNo => {
+        const payload = { ...edits[slNo] };
+        if (payload.is_private && payload.shared_comment) {
+          payload.private_comment = payload.shared_comment;
+          delete payload.shared_comment;
+        }
         return fetch(`${API_BASE}/accounts/${selectedAccount['Account No']}/findings/${slNo}?datasetId=${activeDatasetId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(edits[slNo])
+          body: JSON.stringify(payload)
         });
       });
       
@@ -184,8 +190,54 @@ export default function Dashboard() {
     setSaving(false);
   };
 
+  const deleteComment = async (commentId: string) => {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/comments/${commentId}`, { method: 'DELETE' });
+      if (res.ok) {
+        await loadAccountDetails(selectedAccount['Account No']);
+      } else {
+        alert('Failed to delete comment.');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+  };
+
+  const sortedFindings = [...findings].sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    if (sortConfig.key === 'Risk') {
+      const riskOrder: Record<string, number> = { 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
+      const aRisk = riskOrder[a.Risk?.toUpperCase()] || 0;
+      const bRisk = riskOrder[b.Risk?.toUpperCase()] || 0;
+      return sortConfig.direction === 'asc' ? aRisk - bRisk : bRisk - aRisk;
+    }
+    
+    if (sortConfig.key === 'Status') {
+      const aStatus = a.Status || '';
+      const bStatus = b.Status || '';
+      return sortConfig.direction === 'asc' ? aStatus.localeCompare(bStatus) : bStatus.localeCompare(aStatus);
+    }
+    
+    if (sortConfig.key === 'Comments') {
+      const aLatest = a.comments?.length > 0 ? new Date(a.comments[a.comments.length - 1].createdAt).getTime() : 0;
+      const bLatest = b.comments?.length > 0 ? new Date(b.comments[b.comments.length - 1].createdAt).getTime() : 0;
+      return sortConfig.direction === 'asc' ? aLatest - bLatest : bLatest - aLatest;
+    }
+    return 0;
+  });
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
   };
 
   if (!user) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
@@ -231,6 +283,12 @@ export default function Dashboard() {
               <Search size={18} /> Search
             </button>
           </form>
+          
+          {activeDatasetId && (
+            <a href={`/api/export?datasetId=${activeDatasetId}`} className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', borderColor: 'white', textDecoration: 'none' }}>
+              <Download size={18} /> Export
+            </a>
+          )}
           
           <button onClick={triggerUpload} disabled={uploading} className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', borderColor: 'white' }}>
             <Upload size={18} /> {uploading ? 'Importing...' : 'Import Excel'}
@@ -383,6 +441,7 @@ export default function Dashboard() {
                             <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--bob-blue)' : 'var(--bob-orange)'} />
                           ))
                         }
+                        <LabelList dataKey="value" position="top" formatter={(value: number) => formatCurrency(value)} style={{ fontSize: '0.8rem', fill: 'var(--text-main)' }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -405,15 +464,15 @@ export default function Dashboard() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ width: '10%' }}>Risk</th>
+                      <th style={{ width: '10%', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('Risk')}>Risk {sortConfig?.key === 'Risk' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
                       <th style={{ width: '25%' }}>Observation</th>
-                      <th style={{ width: '35%' }}>Comments & Updates</th>
+                      <th style={{ width: '35%', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('Comments')}>Comments & Updates {sortConfig?.key === 'Comments' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
                       <th style={{ width: '15%' }}>Add Comment</th>
-                      <th style={{ width: '15%' }}>Status</th>
+                      <th style={{ width: '15%', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('Status')}>Status {sortConfig?.key === 'Status' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {findings.map((f, i) => {
+                    {sortedFindings.map((f, i) => {
                       const slNo = f['SL No'];
                       const riskClass = f.Risk === 'HIGH' ? 'risk-high' : f.Risk === 'MEDIUM' ? 'risk-medium' : 'risk-low';
                       
@@ -441,10 +500,17 @@ export default function Dashboard() {
                               )}
                               {/* Threaded Comments */}
                               {f.comments?.map((c: any, idx: number) => (
-                                <div key={idx} style={{ fontSize: '0.85rem', background: c.type === 'PRIVATE' ? 'rgba(255,237,213,0.5)' : '#f8fafc', padding: '8px', borderRadius: '4px', borderLeft: `3px solid ${c.type === 'PRIVATE' ? 'var(--bob-orange)' : 'var(--bob-blue)'}` }}>
+                                <div key={idx} style={{ position: 'relative', fontSize: '0.85rem', background: c.type === 'PRIVATE' ? 'rgba(255,237,213,0.5)' : '#f8fafc', padding: '8px', borderRadius: '4px', borderLeft: `3px solid ${c.type === 'PRIVATE' ? 'var(--bob-orange)' : 'var(--bob-blue)'}` }}>
                                   <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
                                     <span>{c.username} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{c.type === 'PRIVATE' ? '(Private)' : ''}</span></span>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+                                      {user && c.authorId === user.id && (
+                                        <button onClick={() => deleteComment(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--status-high-text)', padding: 0 }} title="Delete comment">
+                                          <Trash2 size={14} />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                   <div>{c.text}</div>
                                 </div>
@@ -463,6 +529,10 @@ export default function Dashboard() {
                                 onChange={(e) => handleEditChange(slNo, 'shared_comment', e.target.value)}
                                 placeholder="Write a comment..."
                               />
+                              <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                <input type="checkbox" checked={edits[slNo]?.is_private || false} onChange={(e) => handleEditChange(slNo, 'is_private', e.target.checked)} />
+                                Make Private?
+                              </label>
                             </div>
                           </td>
                           <td style={{ padding: '16px 8px' }}>
