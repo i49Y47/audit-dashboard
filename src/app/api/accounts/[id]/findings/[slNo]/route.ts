@@ -2,15 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string, slNo: string } }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; slNo: string }> }
+) {
+  const { id, slNo } = await params;
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const accountNo = params.id;
-    const slNo = params.slNo;
+    const accountNo = id;
     const { searchParams } = new URL(req.url);
     const datasetId = searchParams.get('datasetId');
 

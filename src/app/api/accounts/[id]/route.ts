@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const accountNo = params.id;
+    const { id: accountNo } = await params;
     const { searchParams } = new URL(req.url);
     const datasetId = searchParams.get('datasetId');
 
